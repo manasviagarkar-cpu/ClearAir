@@ -56,12 +56,15 @@ To connect a live AQI API or Gemini model later without breaking security rules:
 Run the unit test suite with Node.js (tested on Node 22):
 
 ```bash
+npm test
+# or directly:
 node test.js
 ```
 
-To view the application locally, serve the root directory with any static HTTP server (or `npm run dev` in the container):
+To build or serve the static site locally:
 
 ```bash
+npm run build
 npx serve .
 ```
 

@@ -813,7 +813,7 @@ export function answerQuestion({ question, household, airQuality } = {}) {
   const q = cleanQuestion.toLowerCase();
 
   const isMedicalEmergencyOrDiagnosis =
-    /\b(diagnos|prescrib|dosage|inhaler dose|medication|chest pain|faint|wheez|heart attack|asthma attack|doctor|emergency|cure|symptoms)\b/.test(
+    /\b(diagnos\w*|prescrib\w*|dosage|dose|inhaler|medication|medicine|chest pain|faint\w*|wheez\w*|shortness of breath|heart attack|asthma attack|doctor|physician|emergency|cure|symptom\w*)\b/.test(
       q
     );
 
@@ -840,7 +840,7 @@ export function answerQuestion({ question, household, airQuality } = {}) {
     : 'This guidance is educational, not medical advice, and uses illustrative demo air-quality values.';
 
   // Topic 1: Children & outdoor play
-  if (/\b(child|children|kid|kids|son|daughter|baby|toddler|play|playground|school)\b/.test(q)) {
+  if (/\b(child\w*|kid|kids|son|daughter|baby|babies|toddler\w*|play\w*|playground|school\w*)\b/.test(q)) {
     if (ctx.isSevere) {
       return {
         valid: true,
@@ -880,7 +880,7 @@ export function answerQuestion({ question, household, airQuality } = {}) {
   }
 
   // Topic 2: Windows & ventilation
-  if (/\b(window|windows|ventilat|open|air out|fresh air|draft|breeze)\b/.test(q)) {
+  if (/\b(window|windows|ventilat\w*|open|air out|fresh air|draft\w*|breeze)\b/.test(q)) {
     if (ctx.hasMechVent && (ctx.isSevere || ctx.isPoor)) {
       return {
         valid: true,
@@ -938,10 +938,11 @@ export function answerQuestion({ question, household, airQuality } = {}) {
 
   // Topic 3: Commute, transit, car use & emissions (tailored by travelMode + severity + priority)
   if (
-    /\b(commute|transit|bus|metro|train|car|drive|driving|cycle|cycling|bike|two-wheeler|scooter|emission|emissions|traffic|idling|errand|remote|work from home)\b/.test(
+    /\b(commut\w*|transit|bus|buses|metro|train|car|cars|drive|driving|cycl\w*|bike|biking|two-wheeler|scooter|emission\w*|traffic|idling|idle|errand\w*|remote|work from home)\b/.test(
       q
     )
   ) {
+    const mentionsMask = /\b(mask\w*|n95|kn95|ffp2|respirator\w*)\b/.test(q);
     const lowEmissionNote =
       'Public transit (metro, train, or shared bus) or combining errands into one off-peak trip is usually the lowest-emission urban option.';
     if (ctx.isWfh) {
@@ -964,6 +965,10 @@ export function answerQuestion({ question, household, airQuality } = {}) {
           'Consider public transit or carpooling when practical; if driving, switch cabin air to recirculate in congestion and avoid idling over 30 seconds.';
       } else if (ctx.isOutdoorCommute) {
         travelNextStep = `Switch your ${safeHousehold.travelMode.toLowerCase()} trip to enclosed transit if practical today, or shift off peak traffic onto quiet side streets.`;
+      }
+      if (mentionsMask) {
+        travelNextStep +=
+          ' If traveling outdoors beside traffic, a well-fitting N95/FFP2 respirator helps filter fine particles better than a cloth mask.';
       }
       return {
         valid: true,
@@ -990,7 +995,7 @@ export function answerQuestion({ question, household, airQuality } = {}) {
 
   // Topic 4: Bedroom air, purifiers, sleep & indoor quality
   if (
-    /\b(bedroom|sleep|night|purifier|hepa|filter|indoor|room|air quality inside|gas|cook|incense|candle)\b/.test(
+    /\b(bedroom\w*|sleep\w*|night|purifier\w*|hepa|filter\w*|indoor\w*|room\w*|air quality inside|gas|cook\w*|kitchen|stove|incense|candle\w*|smoke)\b/.test(
       q
     )
   ) {
@@ -1028,7 +1033,7 @@ export function answerQuestion({ question, household, airQuality } = {}) {
 
   // Topic 5: Outdoor exercise, walking, masks & sensitive adults
   if (
-    /\b(exercise|walk|run|jog|workout|outdoor|outside|mask|n95|kn95|park|morning|evening|older|elderly|senior|asthma|heart)\b/.test(
+    /\b(exercis\w*|walk\w*|run\w*|jog\w*|workout\w*|outdoor\w*|outside|mask\w*|n95|kn95|ffp2|respirator\w*|park\w*|morning|evening|older|elderly|senior\w*|asthma|heart)\b/.test(
       q
     )
   ) {

@@ -475,4 +475,33 @@ runTest('21. Hardened validation enforces indoor exclusivity and safe partial ai
   assert.ok(partialPlan.recommendations.length >= 4);
 });
 
+runTest('22. Assistant handles word-stem variations for ventilation, cooking, and medical safety', () => {
+  const ventRes = answerQuestion({
+    question: 'What about ventilation today?',
+    household: DEFAULT_HOUSEHOLD,
+    airQuality: DEMO_LOCATIONS.Delhi,
+  });
+  assert.equal(ventRes.inScope, true);
+  assert.equal(ventRes.topic, 'Windows & ventilation');
+
+  const cookRes = answerQuestion({
+    question: 'How can I reduce smoke when cooking with gas?',
+    household: {
+      ...DEFAULT_HOUSEHOLD,
+      indoor: ['Windows can be closed', 'Cooking with gas'],
+    },
+    airQuality: DEMO_LOCATIONS.Delhi,
+  });
+  assert.equal(cookRes.inScope, true);
+  assert.equal(cookRes.topic, 'Bedroom & indoor air');
+
+  const wheezingRes = answerQuestion({
+    question: 'My child is wheezing, what should I do?',
+    household: DEFAULT_HOUSEHOLD,
+    airQuality: DEMO_LOCATIONS.Delhi,
+  });
+  assert.equal(wheezingRes.inScope, false);
+  assert.match(wheezingRes.nextStep, /urgent medical care/i);
+});
+
 console.log(`\nTotal passed: ${passed}`);
