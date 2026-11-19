@@ -504,4 +504,11 @@ runTest('22. Assistant handles word-stem variations for ventilation, cooking, an
   assert.match(wheezingRes.nextStep, /urgent medical care/i);
 });
 
+runTest('23. Interface labels demo snapshot and deterministic reasoning honestly', () => {
+  const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  assert.match(html, /Demo snapshot · Illustrative values/);
+  assert.match(html, /Demo reasoning mode · Deterministic local guidance/);
+  assert.doesNotMatch(html, /Updated just now/i);
+});
+
 console.log(`\nTotal passed: ${passed}`);

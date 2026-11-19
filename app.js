@@ -143,12 +143,14 @@ export function validateHousehold(rawHousehold) {
   const errors = {};
 
   const city = sanitizeText(input.city);
-  if (!VALID_OPTIONS.cities.includes(city)) {
+  const hasValidCity = VALID_OPTIONS.cities.includes(city);
+  if (!hasValidCity) {
     errors.city = 'Please choose one of the available demo cities.';
   }
 
   const householdSize = sanitizeText(input.householdSize);
-  if (!VALID_OPTIONS.householdSizes.includes(householdSize)) {
+  const hasValidSize = VALID_OPTIONS.householdSizes.includes(householdSize);
+  if (!hasValidSize) {
     errors.householdSize = 'Please select your household size.';
   }
 
@@ -163,12 +165,14 @@ export function validateHousehold(rawHousehold) {
   }
 
   const travelMode = sanitizeText(input.travelMode);
-  if (!VALID_OPTIONS.travelModes.includes(travelMode)) {
+  const hasValidTravel = VALID_OPTIONS.travelModes.includes(travelMode);
+  if (!hasValidTravel) {
     errors.travelMode = 'Please select your main daily travel method.';
   }
 
   const outdoorTime = sanitizeText(input.outdoorTime);
-  if (!VALID_OPTIONS.outdoorTimes.includes(outdoorTime)) {
+  const hasValidOutdoor = VALID_OPTIONS.outdoorTimes.includes(outdoorTime);
+  if (!hasValidOutdoor) {
     errors.outdoorTime = 'Please choose when outdoor activity usually happens.';
   }
 
@@ -183,26 +187,19 @@ export function validateHousehold(rawHousehold) {
   }
 
   const priority = sanitizeText(input.priority);
-  if (!VALID_OPTIONS.priorities.includes(priority)) {
+  const hasValidPriority = VALID_OPTIONS.priorities.includes(priority);
+  if (!hasValidPriority) {
     errors.priority = 'Please select your main priority for today.';
   }
 
   const normalized = {
-    city: VALID_OPTIONS.cities.includes(city) ? city : DEFAULT_HOUSEHOLD.city,
-    householdSize: VALID_OPTIONS.householdSizes.includes(householdSize)
-      ? householdSize
-      : DEFAULT_HOUSEHOLD.householdSize,
+    city: hasValidCity ? city : DEFAULT_HOUSEHOLD.city,
+    householdSize: hasValidSize ? householdSize : DEFAULT_HOUSEHOLD.householdSize,
     sensitivities: sensitivities.length > 0 ? sensitivities : [...DEFAULT_HOUSEHOLD.sensitivities],
-    travelMode: VALID_OPTIONS.travelModes.includes(travelMode)
-      ? travelMode
-      : DEFAULT_HOUSEHOLD.travelMode,
-    outdoorTime: VALID_OPTIONS.outdoorTimes.includes(outdoorTime)
-      ? outdoorTime
-      : DEFAULT_HOUSEHOLD.outdoorTime,
+    travelMode: hasValidTravel ? travelMode : DEFAULT_HOUSEHOLD.travelMode,
+    outdoorTime: hasValidOutdoor ? outdoorTime : DEFAULT_HOUSEHOLD.outdoorTime,
     indoor: indoor.length > 0 ? indoor : [...DEFAULT_HOUSEHOLD.indoor],
-    priority: VALID_OPTIONS.priorities.includes(priority)
-      ? priority
-      : DEFAULT_HOUSEHOLD.priority,
+    priority: hasValidPriority ? priority : DEFAULT_HOUSEHOLD.priority,
   };
 
   return {
@@ -1116,6 +1113,8 @@ function initClearAirApp() {
   const aqWind = document.getElementById('aq-wind');
 
   const householdForm = document.getElementById('household-form');
+  const mainTravelSelect = document.getElementById('main-travel');
+  const outdoorActivitySelect = document.getElementById('outdoor-activity');
   const resetProfileBtn = document.getElementById('reset-profile-btn');
   const formErrorSummary = document.getElementById('form-error-summary');
   const planSection = document.getElementById('plan-section');
@@ -1166,13 +1165,13 @@ function initClearAirApp() {
     },
     travelMode: {
       label: 'Main daily travel',
-      target: document.getElementById('main-travel'),
-      getFocusEl: () => document.getElementById('main-travel'),
+      target: mainTravelSelect,
+      getFocusEl: () => mainTravelSelect,
     },
     outdoorTime: {
       label: 'Typical outdoor activity',
-      target: document.getElementById('outdoor-activity'),
-      getFocusEl: () => document.getElementById('outdoor-activity'),
+      target: outdoorActivitySelect,
+      getFocusEl: () => outdoorActivitySelect,
     },
     indoor: {
       label: 'Indoor environment',
@@ -1203,12 +1202,6 @@ function initClearAirApp() {
     aqWind.textContent = aq.wind;
   }
 
-  function clearChildren(element) {
-    while (element.firstChild) {
-      element.removeChild(element.firstChild);
-    }
-  }
-
   function appendDefinitionRow(dl, term, description, className) {
     const wrap = document.createElement('div');
     if (className) {
@@ -1234,7 +1227,7 @@ function initClearAirApp() {
       planSafetyText.textContent = '';
     }
 
-    clearChildren(planList);
+    const planFragment = document.createDocumentFragment();
     planResult.recommendations.forEach((rec) => {
       const li = document.createElement('li');
       li.className = 'plan-item';
@@ -1270,20 +1263,22 @@ function initClearAirApp() {
       li.appendChild(actionEl);
       li.appendChild(whyEl);
       li.appendChild(details);
-      planList.appendChild(li);
+      planFragment.appendChild(li);
     });
+    planList.replaceChildren(planFragment);
 
     // Transparency section
     whyPrioritySummary.textContent = planResult.prioritySummary;
     whyTradeoffSummary.textContent = planResult.tradeoffSummary;
 
-    clearChildren(signalsList);
+    const signalsFragment = document.createDocumentFragment();
     planResult.signals.forEach((sig) => {
-      appendDefinitionRow(signalsList, sig.label, sig.value, 'signal-item');
+      appendDefinitionRow(signalsFragment, sig.label, sig.value, 'signal-item');
     });
+    signalsList.replaceChildren(signalsFragment);
 
     // Sustainable alternatives
-    clearChildren(alternativesGrid);
+    const alternativesFragment = document.createDocumentFragment();
     planResult.alternatives.forEach((alt) => {
       const card = document.createElement('article');
       card.className = 'alternative-card';
@@ -1299,8 +1294,9 @@ function initClearAirApp() {
 
       card.appendChild(title);
       card.appendChild(dl);
-      alternativesGrid.appendChild(card);
+      alternativesFragment.appendChild(card);
     });
+    alternativesGrid.replaceChildren(alternativesFragment);
   }
 
   function readFormValues() {
@@ -1330,7 +1326,7 @@ function initClearAirApp() {
 
   function clearFormErrors() {
     formErrorSummary.hidden = true;
-    clearChildren(formErrorSummary);
+    formErrorSummary.replaceChildren();
     Object.keys(fieldControlMap).forEach((key) => {
       clearFieldError(key);
     });
@@ -1338,15 +1334,14 @@ function initClearAirApp() {
 
   function showFormErrors(errors) {
     const messages = Object.entries(errors);
-    clearChildren(formErrorSummary);
-    formErrorSummary.hidden = false;
+    const summaryFragment = document.createDocumentFragment();
 
     const title = document.createElement('p');
     title.className = 'error-summary-title';
     title.textContent = `Please fix ${messages.length} ${
       messages.length === 1 ? 'field' : 'fields'
     } before building your plan:`;
-    formErrorSummary.appendChild(title);
+    summaryFragment.appendChild(title);
 
     const list = document.createElement('ul');
     list.className = 'error-summary-list';
@@ -1380,7 +1375,9 @@ function initClearAirApp() {
       list.appendChild(li);
     });
 
-    formErrorSummary.appendChild(list);
+    summaryFragment.appendChild(list);
+    formErrorSummary.replaceChildren(summaryFragment);
+    formErrorSummary.hidden = false;
     formErrorSummary.focus({ preventScroll: true });
     formErrorSummary.scrollIntoView({
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
@@ -1417,8 +1414,8 @@ function initClearAirApp() {
     householdForm.querySelectorAll('input[name="sensitivities"]').forEach((input) => {
       input.checked = DEFAULT_HOUSEHOLD.sensitivities.includes(input.value);
     });
-    document.getElementById('main-travel').value = DEFAULT_HOUSEHOLD.travelMode;
-    document.getElementById('outdoor-activity').value = DEFAULT_HOUSEHOLD.outdoorTime;
+    mainTravelSelect.value = DEFAULT_HOUSEHOLD.travelMode;
+    outdoorActivitySelect.value = DEFAULT_HOUSEHOLD.outdoorTime;
     householdForm.querySelectorAll('input[name="indoor"]').forEach((input) => {
       input.checked = DEFAULT_HOUSEHOLD.indoor.includes(input.value);
     });
@@ -1428,27 +1425,28 @@ function initClearAirApp() {
   }
 
   function renderAssistantResponse(result) {
-    clearChildren(assistantOutput);
+    const fragment = document.createDocumentFragment();
 
     const echo = document.createElement('p');
     echo.className = 'assistant-question-echo';
     echo.textContent = `Question: "${result.question}"`;
-    assistantOutput.appendChild(echo);
+    fragment.appendChild(echo);
 
     const dl = document.createElement('dl');
     dl.className = 'assistant-response-grid';
     appendDefinitionRow(dl, 'Direct answer', result.directAnswer, 'assistant-block');
     appendDefinitionRow(dl, 'Reasoning from your context', result.reasoning, 'assistant-block');
     appendDefinitionRow(dl, 'Practical next step', result.nextStep, 'assistant-block');
-
-    assistantOutput.appendChild(dl);
+    fragment.appendChild(dl);
 
     if (result.safetyCaveat) {
       const caveat = document.createElement('p');
       caveat.className = 'assistant-caveat';
       caveat.textContent = result.safetyCaveat;
-      assistantOutput.appendChild(caveat);
+      fragment.appendChild(caveat);
     }
+
+    assistantOutput.replaceChildren(fragment);
   }
 
   function askAssistant(rawQuestion) {
@@ -1457,15 +1455,15 @@ function initClearAirApp() {
       assistantTimerId = null;
     }
 
-    const previewCheck = answerQuestion({
+    const result = answerQuestion({
       question: rawQuestion,
       household: sessionState.household,
       airQuality: sessionState.airQuality,
     });
 
-    if (!previewCheck.valid) {
+    if (!result.valid) {
       assistantError.hidden = false;
-      assistantError.textContent = previewCheck.error;
+      assistantError.textContent = result.error;
       assistantInput.setAttribute('aria-invalid', 'true');
       assistantInput.focus();
       return;
@@ -1474,34 +1472,34 @@ function initClearAirApp() {
     assistantError.hidden = true;
     assistantError.textContent = '';
     assistantInput.removeAttribute('aria-invalid');
-    sessionState.lastQuestion = previewCheck.question;
+    sessionState.lastQuestion = result.question;
 
     if (prefersReducedMotion()) {
       assistantOutput.removeAttribute('aria-busy');
-      renderAssistantResponse(previewCheck);
+      renderAssistantResponse(result);
       return;
     }
 
     assistantOutput.setAttribute('aria-busy', 'true');
-    clearChildren(assistantOutput);
     const loading = document.createElement('p');
     loading.className = 'assistant-loading';
     loading.textContent = `Checking ${sessionState.airQuality.city} conditions and your household context…`;
-    assistantOutput.appendChild(loading);
+    assistantOutput.replaceChildren(loading);
 
     assistantTimerId = setTimeout(() => {
       assistantTimerId = null;
-      const response = answerQuestion({
-        question: rawQuestion,
-        household: sessionState.household,
-        airQuality: sessionState.airQuality,
-      });
       assistantOutput.removeAttribute('aria-busy');
-      renderAssistantResponse(response);
+      renderAssistantResponse(result);
     }, 140);
   }
 
   function syncAndRenderPlan(city) {
+    if (assistantTimerId !== null) {
+      clearTimeout(assistantTimerId);
+      assistantTimerId = null;
+      assistantOutput.removeAttribute('aria-busy');
+    }
+
     const aq = getAirQualityForCity(city);
     sessionState.airQuality = aq;
     sessionState.household.city = aq.city;
@@ -1539,6 +1537,7 @@ function initClearAirApp() {
 
   // Event listeners
   contextCitySelect.addEventListener('change', (event) => {
+    clearFieldError('city');
     updateCityContext(event.target.value, true);
   });
 
@@ -1555,7 +1554,11 @@ function initClearAirApp() {
       syncCheckboxExclusivity('indoor', 'Not sure', target);
     }
 
-    if (target.name && Object.prototype.hasOwnProperty.call(fieldControlMap, target.name)) {
+    const mapping =
+      target.name && Object.prototype.hasOwnProperty.call(fieldControlMap, target.name)
+        ? fieldControlMap[target.name]
+        : null;
+    if (mapping && (mapping.target?.hasAttribute('aria-invalid') || !formErrorSummary.hidden)) {
       const validation = validateHousehold(readFormValues());
       if (!validation.errors[target.name]) {
         clearFieldError(target.name);
