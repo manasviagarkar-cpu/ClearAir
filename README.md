@@ -20,13 +20,33 @@ Winter temperature inversions and stagnant traffic trap fine particulate matter 
 
 ## Recommendation Logic
 
-The decision engine lives in `generatePlan({ household, airQuality })` in `app.js`. It evaluates pollution severity, `PM2.5`, household sensitivities, schedule flexibility, travel mode, indoor capabilities, and user priority to score and rank 4–6 actions:
+The decision engine lives in `generatePlan({ household, airQuality })` in `src/planEngine.ts` (re-exported via `app.js`). It evaluates pollution severity, `PM2.5`, household sensitivities, schedule flexibility, travel mode, indoor capabilities, and user priority against an explicit weighted-scoring table (`PLAN_RULES` + `SCORING_WEIGHT_TABLE`) to score and rank 4–6 actions:
 
 - **Severe pollution + child:** Prioritizes indoor play, cleaner-air room setup, and stronger safety caveats.
 - **Poor/severe pollution + outdoor commute:** Suggests enclosed public transit or off-peak timing with honest fare/time tradeoffs.
 - **Lowest-emission priority:** Elevates transit, carpooling, consolidated errands, and zero-idling while noting when low-emission active travel increases personal smog exposure.
 - **Lowest-cost priority:** Focuses on free schedule shifts, window timing, and eliminating indoor smoke before recommending any purchases.
 - **No purifier + windows can close:** Recommends peak-hour sealing, brief midday airing, and one low-traffic cleaner-air bedroom.
+
+## Scoring Model
+
+Each eligible rule starts from its category base score and adds matching factor weights from `SCORING_WEIGHT_TABLE` (`factor → weight → contribution`), evaluated deterministically by `evaluateCandidateScore()`:
+
+| Factor | Weight | Effect |
+| --- | ---: | --- |
+| Child outdoors in severe smog (base) | `112` | Surfaces indoor play and cleaner-room steps first |
+| Outdoor timing / window sealing / open commute (base) | `92–94` | Elevates peak-smog avoidance and roadside protection |
+| Mechanical ventilation / bedroom purifier / cleaner room (base) | `86–90` | Prioritizes bedroom and building-airflow protection |
+| Work-from-home / remote study / car / transit / indoor sources (base) | `80–84` | Ranks daily travel and indoor-combustion habits |
+| Errand consolidation / moderate outdoor window (base) | `74–76` | Includes practical trip-batching and off-arterial options |
+| Priority: `Lowest emissions` | `+12` to `+28` | Boosts transit/carpool/errands (`+28`), open-commute shift (`+26`), and remote work (`+12`) |
+| Priority: `Lowest exposure` | `+10` to `+22` | Boosts outdoor/child/timing (`+22`), remote work (`+20`), purifier (`+18`), sealing (`+10` to `+14`), and mech vent (`+12`) |
+| Priority: `Lowest cost` | `+8` to `+20` | Boosts zero-cost habits (`+20` indoor/cleaner room, `+12` WFH, `+10` timing/errands, `+8` child/moderate commute; `-4` powered purifier/filter upgrade) |
+| Priority: `Balanced option` | `+4` | Balances moderate exposure and emissions boosts across core rules |
+| Gas cooking / respiratory sensitivity | `+15` / `+10` | Elevates kitchen exhaust and smoke elimination |
+| Vulnerable household member | `+10` to `+12` | Raises protection (`+12` outdoor timing / cleaner room, `+10` purifier / moderate day) |
+| Severe smog | `+6` to `+8` | Scales urgency (`+8` open commute / car / remote work / window timing, `+6` cleaner room / mech vent) |
+| Multi-person / large household (`3+` / `5+ people`) | `+4` / `+6` | Scales errand consolidation (`+4` for `3+`) and large-home carpool/gas cooking (`+6` for `5+`) |
 
 ## How Location Demo Data Works
 

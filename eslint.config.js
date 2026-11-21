@@ -1,10 +1,12 @@
 import js from '@eslint/js';
 
 export default [
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
   js.configs.recommended,
   {
     files: ['**/*.js'],
-    ignores: ['dist/**', 'node_modules/**'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -46,13 +48,6 @@ export default [
     files: ['test.js'],
     rules: {
       'max-lines-per-function': 'off',
-    },
-  },
-  {
-    // Relax function-length for main.js (initClearAirApp is a large bootstrap)
-    files: ['src/main.js'],
-    rules: {
-      'max-lines-per-function': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
     },
   },
 ];

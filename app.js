@@ -1,21 +1,11 @@
 /**
- * app.js — Public re-export facade for ClearAir.
+ * app.js — Public ES module facade for ClearAir.
  *
- * The implementation has been split into focused ES modules under src/.
- * This file re-exports every symbol that test.js and index.html depend on,
- * so external consumers need no import-path changes.
- *
- * Module map:
- *   src/locations.js   — DEMO_LOCATIONS, getAirQualityForCity
- *   src/validation.js  — VALID_OPTIONS, DEFAULT_HOUSEHOLD, sanitizeText,
- *                         validateHousehold, normalizeAirQuality
- *   src/plan-engine.js — generatePlan, RULE_SCORES
- *   src/assistant.js   — answerQuestion
- *   src/render.js      — renderAirQuality, renderPlan, renderAssistantResponse
- *   src/main.js        — initClearAirApp (browser bootstrap, self-invokes)
+ * Re-exports every symbol consumed by test.js and bootstraps the browser UI
+ * module (`src/ui.ts`) when running inside a document context.
  */
 
-export { DEMO_LOCATIONS, getAirQualityForCity } from './src/locations.js';
+export { DEMO_LOCATIONS, getAirQualityForCity } from './src/airQuality.ts';
 
 export {
   VALID_OPTIONS,
@@ -23,21 +13,23 @@ export {
   sanitizeText,
   validateHousehold,
   normalizeAirQuality,
-} from './src/validation.js';
-
-export { generatePlan, RULE_SCORES } from './src/plan-engine.js';
-
-export { answerQuestion } from './src/assistant.js';
+} from './src/validation.ts';
 
 export {
+  SCORING_WEIGHT_TABLE,
+  PLAN_RULES,
+  evaluateCandidateScore,
+  generatePlan,
+} from './src/planEngine.ts';
+
+export { MAX_QUESTION_LENGTH, answerQuestion } from './src/qa.ts';
+
+export {
+  debounce,
   appendDefinitionRow,
   renderAirQuality,
   renderPlan,
   renderAssistantResponse,
-} from './src/render.js';
+  initClearAirApp,
+} from './src/ui.ts';
 
-// Bootstrap the browser app when running in a document context.
-// The import itself triggers the self-executing guard inside main.js.
-if (typeof document !== 'undefined') {
-  import('./src/main.js');
-}

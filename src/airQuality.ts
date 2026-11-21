@@ -1,36 +1,43 @@
 /**
- * @fileoverview Demo location data and city lookup for ClearAir.
+ * @fileoverview Demo city air-quality profiles and lookup helpers for ClearAir.
  */
 
 /**
- * Strips control characters and trims whitespace. Duplicated here to avoid
- * a circular dependency between locations.js and validation.js.
- *
- * @param {unknown} value
- * @returns {string}
+ * Represents illustrative or local air-quality conditions for a city.
  */
-function sanitizeText(value) {
-  if (typeof value !== 'string') return '';
+export interface AirQuality {
+  readonly city: string;
+  readonly aqi: number;
+  readonly pm25: number;
+  readonly pm10: number;
+  readonly temperatureC: number;
+  readonly wind: string;
+  readonly severity: 'Severe' | 'Poor' | 'Moderate';
+  readonly interpretation: string;
+  readonly cleanerWindow: string;
+  readonly peakSmogWindows: string;
+  readonly isDemo: boolean;
+  readonly isFallback: boolean;
+}
+
+/**
+ * Strips control characters and collapses whitespace without importing
+ * validation.ts (prevents a circular dependency between airQuality and validation).
+ *
+ * @param value - Unknown raw text value.
+ * @returns Sanitized plain-text string.
+ */
+function sanitizeCityName(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '';
+  }
   return value.replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
- * @typedef {Object} AirQuality
- * @property {string}  city            - City name
- * @property {number}  aqi             - Air Quality Index value
- * @property {number}  pm25            - PM2.5 concentration in µg/m³
- * @property {number}  pm10            - PM10 concentration in µg/m³
- * @property {number}  temperatureC    - Temperature in Celsius
- * @property {string}  wind            - Wind description
- * @property {'Severe'|'Poor'|'Moderate'} severity - Severity category
- * @property {string}  interpretation  - Plain-language interpretation
- * @property {string}  cleanerWindow   - Time window with cleaner air
- * @property {string}  peakSmogWindows - Peak smog time window
- * @property {boolean} isDemo          - Whether this is demo data
- * @property {boolean} isFallback      - Whether this is fallback data
+ * Illustrative winter air-quality profiles for supported demo cities.
  */
-
-export const DEMO_LOCATIONS = {
+export const DEMO_LOCATIONS: Readonly<Record<string, AirQuality>> = {
   Delhi: {
     city: 'Delhi',
     aqi: 286,
@@ -109,14 +116,14 @@ export const DEMO_LOCATIONS = {
 };
 
 /**
- * Returns the AirQuality record for the given city, or a labeled fallback
- * if the city is not in DEMO_LOCATIONS.
+ * Returns the illustrative air-quality snapshot for a given city, or a clearly
+ * labeled fallback demo profile when the requested city is unavailable.
  *
- * @param {string} city - City name to look up
- * @returns {AirQuality} Air quality data (may be fallback)
+ * @param city - City name selected by the user or caller.
+ * @returns Normalized demo or fallback AirQuality record.
  */
-export function getAirQualityForCity(city) {
-  const cleanCity = sanitizeText(city);
+export function getAirQualityForCity(city: string): AirQuality {
+  const cleanCity = sanitizeCityName(city);
   if (cleanCity && Object.prototype.hasOwnProperty.call(DEMO_LOCATIONS, cleanCity)) {
     return { ...DEMO_LOCATIONS[cleanCity] };
   }

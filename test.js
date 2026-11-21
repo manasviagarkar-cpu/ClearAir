@@ -7,6 +7,7 @@ import {
   validateHousehold,
   generatePlan,
   answerQuestion,
+  debounce,
 } from './app.js';
 
 let passed = 0;
@@ -510,5 +511,62 @@ runTest('23. Interface labels demo snapshot and deterministic reasoning honestly
   assert.match(html, /Demo reasoning mode · Deterministic local guidance/);
   assert.doesNotMatch(html, /Updated just now/i);
 });
+
+runTest('24. Modular TypeScript source files never use innerHTML or eval', () => {
+  const srcDir = new URL('./src/', import.meta.url);
+  const tsFiles = fs.readdirSync(srcDir).filter((name) => name.endsWith('.ts'));
+  assert.ok(tsFiles.length >= 5, 'Expected modular TypeScript files under src/');
+  for (const file of tsFiles) {
+    const content = fs.readFileSync(new URL(`./src/${file}`, import.meta.url), 'utf8');
+    assert.equal(content.includes('innerHTML'), false, `${file} must not use innerHTML`);
+    assert.equal(content.includes('eval('), false, `${file} must not use eval(`);
+  }
+});
+
+runTest('25. Weighted scoring table produces auditable deterministic score breakdowns', () => {
+  const plan = generatePlan({
+    household: {
+      ...DEFAULT_HOUSEHOLD,
+      city: 'Delhi',
+      sensitivities: ['Child under 12'],
+      priority: 'Lowest exposure',
+    },
+    airQuality: DEMO_LOCATIONS.Delhi,
+  });
+
+  assert.ok(Array.isArray(plan.scoringAudit) && plan.scoringAudit.length === plan.recommendations.length);
+  const topAudit = plan.scoringAudit[0];
+  assert.equal(topAudit.id, 'outdoor-child-severe');
+  assert.equal(topAudit.totalScore, 134);
+  assert.ok(topAudit.breakdown.some((b) => b.factor.includes('Lowest exposure') && b.contribution === 22));
+});
+
+try {
+  let calls = 0;
+  let lastVal = '';
+  const debounced = debounce((val) => {
+    calls += 1;
+    lastVal = val;
+  }, 20);
+
+  debounced('first');
+  debounced('second');
+  debounced('third');
+  await new Promise((resolve) => setTimeout(resolve, 45));
+  assert.equal(calls, 1, 'Expected rapid calls to coalesce into one');
+  assert.equal(lastVal, 'third');
+
+  debounced('cancelled');
+  debounced.cancel();
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  assert.equal(calls, 1, 'Expected cancel() to prevent queued invocation');
+
+  passed += 1;
+  console.log('PASS: 26. Debounce helper coalesces rapid calls and supports cancel()');
+} catch (error) {
+  console.error('FAIL: 26. Debounce helper coalesces rapid calls and supports cancel()');
+  console.error(error);
+  process.exitCode = 1;
+}
 
 console.log(`\nTotal passed: ${passed}`);
